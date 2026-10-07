@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+# local MCP client config contains local paths
+.mcp.json
+.coverage
+htmlcov/

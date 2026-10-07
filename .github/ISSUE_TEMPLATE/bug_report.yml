@@ -1,0 +1,47 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please remove project names, paths and anything else you do not want to publish.
+        For security problems use the private reporting described in SECURITY.md instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The tool call (name and arguments), what you expected and what you got (the error text).
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `carmaker-mcp doctor`
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: carmaker-mcp, CarMaker, MATLAB, Python, MCP client
+      placeholder: carmaker-mcp 0.1.0, CarMaker 14.1.1, MATLAB R2024b, Python 3.12, Claude Code
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Which way of running
+      options:
+        - MATLAB-connected session (CarMaker for Simulink)
+        - Standalone instance (cm_standalone_*)
+        - Neither (setup, data files, results)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lines
+      description: Relevant lines of server.log (state folder) and of `cm_log(level="error")`.
+      render: text

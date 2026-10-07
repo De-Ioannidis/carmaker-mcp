@@ -1,0 +1,100 @@
+name: release
+# Pushing a tag v<version> publishes to PyPI, then to the MCP registry, and drafts a GitHub release with
+# the one-click bundle. A manual run publishes to TestPyPI only (rehearsal).
+# PyPI and the registry use OIDC (no stored tokens): see docs/releasing.md for the one-time setup.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv build
+      - name: Tag, package and server.json must carry the same version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          test -f "dist/carmaker_mcp-${GITHUB_REF_NAME#v}-py3-none-any.whl"
+          test "$(jq -r .version server.json)" = "${GITHUB_REF_NAME#v}"
+          test "$(jq -r '.packages[0].version' server.json)" = "${GITHUB_REF_NAME#v}"
+      - run: uvx twine check --strict dist/*
+      - name: Smoke test the wheel the way users run it
+        run: uvx --from dist/*.whl carmaker-mcp --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  testpypi:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  pypi:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  registry:
+    # The registry checks that the PyPI package exists and that its README names this server.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
+
+  github-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: uv sync --locked
+      - name: Build the one-click bundles
+        run: |
+          uv run python packaging/build_mcpb.py --matlab R2024b
+          uv run python packaging/build_mcpb.py --no-matlab
+      - name: Draft the release (review and publish it by hand)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.mcpb --draft --generate-notes --title "$GITHUB_REF_NAME"

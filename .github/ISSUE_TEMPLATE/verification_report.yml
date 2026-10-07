@@ -1,0 +1,31 @@
+name: Verification report
+description: You ran the server or the live tests on your setup (working or not)
+labels: [verification]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only one setup has been tested so far (see docs/verification.md). Reports from other versions,
+        including "it works", are very welcome.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      placeholder: CarMaker 14.1.1, MATLAB R2024b, Python 3.12, Windows 11, carmaker-mcp 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `carmaker-mcp doctor`
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: What you ran and what it printed
+      description: Output of the live tests (`pytest -m live ... -s`) or a description of the tool calls and results.
+      render: text
+    validations:
+      required: true

@@ -1,0 +1,56 @@
+name: ci
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked --extra dev
+      - run: uv run ruff check src tests packaging scripts
+      # unit tests only: live tests need CarMaker + MATLAB and are deselected by default
+      - run: uv run pytest -q --cov=carmaker_mcp --cov-fail-under=85
+
+  typecheck:
+    runs-on: windows-latest   # the code uses winreg, which only exists on Windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked --extra dev
+      - run: uv run pyright
+
+  fastmcp-compat:
+    # the lock file pins the newest FastMCP; these are the older major versions we claim to support
+    strategy:
+      fail-fast: false
+      matrix:
+        fastmcp: ["fastmcp==2.14.*", "fastmcp==3.*"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv run --no-project --isolated --with-editable . --with pytest --with "${{ matrix.fastmcp }}" pytest -q
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv build
+      - run: uvx twine check --strict dist/*
+      - run: uvx --from dist/*.whl carmaker-mcp --version

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.De-Ioannidis/carmaker-mcp",
+  "title": "CarMaker",
+  "description": "Drive IPG CarMaker for Simulink: run test runs, read results, edit vehicle data and parameters.",
+  "repository": {
+    "url": "https://github.com/De-Ioannidis/carmaker-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "carmaker-mcp",
+      "version": "0.1.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--python",
+          "value": "3.12",
+          "description": "A Python version your CarMaker install ships its Python API for (CarMaker 14.1: 3.10 to 3.12)."
+        },
+        {
+          "type": "named",
+          "name": "--with",
+          "value": "matlabengine=={matlab_engine_version}",
+          "description": "MATLAB Engine for Python matching your MATLAB release. `carmaker-mcp doctor` prints the right value.",
+          "variables": {
+            "matlab_engine_version": {
+              "description": "24.2.* for MATLAB R2024b, 24.1.* for R2024a, 23.2.* for R2023b",
+              "default": "24.2.*"
+            }
+          }
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "CM_PROJECT",
+          "description": "CarMaker project folder. All writes are confined to it.",
+          "format": "filepath",
+          "isRequired": true
+        },
+        {
+          "name": "CM_MODEL",
+          "description": "Simulink model that cm_session_start opens (name on the MATLAB path, or a file)."
+        },
+        {
+          "name": "CM_MATLAB_SESSION",
+          "description": "Name under which MATLAB shares its engine.",
+          "default": "cm_mcp"
+        },
+        {
+          "name": "CM_POPUP_TIMEOUT",
+          "description": "Seconds after which CarMaker GUI pop-ups answer themselves with their default choice. Not set: they wait for a click."
+        },
+        {
+          "name": "CM_ENABLE",
+          "description": "Optional tools, comma separated: tcl (raw Tcl in the GUI), experimental (Simulink structure edits)."
+        },
+        {
+          "name": "CM_DISABLE",
+          "description": "Tool groups to switch off, comma separated: standalone, study, matlab."
+        }
+      ]
+    }
+  ]
+}

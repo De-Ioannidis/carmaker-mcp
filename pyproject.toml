@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "carmaker-mcp"
+dynamic = ["version"]
+description = "MCP server that lets an AI agent drive IPG CarMaker for Simulink: run test runs, edit vehicle/driver/test-run data and Simulink parameters, read results."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Dimitrios Ioannidis" }]
+keywords = ["mcp", "model-context-protocol", "carmaker", "ipg", "simulink", "matlab", "vehicle-dynamics", "simulation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = ["fastmcp>=2.14", "numpy>=1.24", "typing-extensions>=4.6"]
+
+[project.optional-dependencies]
+# matlabengine is deliberately not an extra: its version must equal the user's MATLAB release
+# (`carmaker-mcp doctor` prints the right pin).
+dev = ["pytest>=7", "pytest-cov", "ruff", "pyright"]
+
+[project.urls]
+Homepage = "https://github.com/De-Ioannidis/carmaker-mcp"
+Documentation = "https://github.com/De-Ioannidis/carmaker-mcp/tree/main/docs"
+Changelog = "https://github.com/De-Ioannidis/carmaker-mcp/blob/main/CHANGELOG.md"
+Issues = "https://github.com/De-Ioannidis/carmaker-mcp/issues"
+
+[project.scripts]
+carmaker-mcp = "carmaker_mcp.server:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "carmaker_mcp.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["live: needs a running CarMaker for Simulink + MATLAB session (set CM_LIVE=1)"]
+addopts = "-m 'not live'"
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.10"
+reportMissingModuleSource = false  # matlabengine and IPG's cmapi are not installed everywhere
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+"src/carmaker_mcp/guide.py" = ["E501"]  # prose for the agent
