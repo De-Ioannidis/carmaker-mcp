@@ -57,10 +57,46 @@ class Report:
 
 
 # ---- facts about the machine ---------------------------------------------------
+# Version numbers follow the year only since R2023b (registry keys, matlabengine versions).
+_OLD_VERSIONS = {"9.10": "R2021a", "9.11": "R2021b", "9.12": "R2022a", "9.13": "R2022b", "9.14": "R2023a"}
+# Newest Python the engine package of a release installs on (metadata of matlabengine on PyPI).
+ENGINE_MAX_PYTHON = {
+    "R2021a": "3.8", "R2021b": "3.9", "R2022a": "3.9", "R2022b": "3.10", "R2023a": "3.10", "R2023b": "3.11",
+    "R2024a": "3.11", "R2024b": "3.12", "R2025a": "3.12", "R2025b": "3.12", "R2026a": "3.13",
+}
+MIN_PYTHON = (3, 10)  # of this server
+
+
+def _py(version: str) -> tuple[int, ...]:
+    return tuple(int(x) for x in version.split(".")[:2])
+
+
 def release_name(version: str) -> str:
-    """MATLAB version number to release name: '24.2' -> 'R2024b'."""
+    """MATLAB version number to release name: '24.2' -> 'R2024b', '9.14' -> 'R2023a'."""
     major, minor = (int(x) for x in version.split(".")[:2])
+    if f"{major}.{minor}" in _OLD_VERSIONS:
+        return _OLD_VERSIONS[f"{major}.{minor}"]
     return f"R20{major:02d}{'a' if minor == 1 else 'b'}"
+
+
+def engine_line(release: str) -> str:
+    """Release name to the version line of its engine package: 'R2024b' -> '24.2', 'R2023a' -> '9.14'."""
+    for version, name in _OLD_VERSIONS.items():
+        if name == release:
+            return version
+    m = re.fullmatch(r"R20(\d\d)([ab])", release)
+    if not m:
+        raise ValueError(f"not a MATLAB release name: {release!r} (expected e.g. R2024b)")
+    return f"{int(m[1])}.{1 if m[2] == 'a' else 2}"
+
+
+def engine_python(release: str, available: list[str] | None = None) -> str | None:
+    """Newest Python that both the release's engine package and this server run on, optionally among
+    ``available`` versions. None if there is none (releases before R2022b)."""
+    top = ENGINE_MAX_PYTHON.get(release)
+    pool = available if available is not None else [f"3.{n}" for n in range(MIN_PYTHON[1], 15)]
+    fit = [v for v in pool if _py(v) >= MIN_PYTHON and (top is None or _py(v) <= _py(top))]
+    return max(fit, key=_py) if fit else None
 
 
 def matlab_installs() -> dict[str, str]:
@@ -166,10 +202,26 @@ def diagnose(cfg: Config, installs: dict[str, str] | None = None, sessions: list
     if usable_rel:
         rep.matlab_release = usable_rel[-1]
         version, rep.matlab_root = by_release[rep.matlab_release]
-        rep.engine_pin = f"matlabengine=={version}.*"
         others = sorted(set(by_release) - {rep.matlab_release})
         rep.add("MATLAB", True, f"{rep.matlab_release} at {rep.matlab_root}"
                 + (f" (also installed, not used: {', '.join(others)})" if others else ""))
+        # The engine package of a release only installs on some Python versions.
+        top = ENGINE_MAX_PYTHON.get(rep.matlab_release)
+        fit = engine_python(rep.matlab_release, rep.cmapi_pythons or None)
+        if fit is None:
+            rep.add("Python for the MATLAB engine", False,
+                    f"the engine package of {rep.matlab_release} needs Python {top} or older, this server "
+                    f"needs {MIN_PYTHON[0]}.{MIN_PYTHON[1]} or newer",
+                    "use a newer MATLAB release that this CarMaker supports; standalone runs work "
+                    "without MATLAB")
+        else:
+            rep.engine_pin = f"matlabengine=={version}.*"
+            rep.recommended_python = fit
+            if top is not None and _py(rep.python) > _py(top):
+                rep.add("Python for the MATLAB engine", False,
+                        f"running Python {rep.python}; the engine package of {rep.matlab_release} "
+                        f"installs on Python {top} at most",
+                        f"run the server with Python {fit} (uvx --python {fit} ...)")
     elif installs:
         rep.add("MATLAB", False,
                 f"installed: {', '.join(sorted(by_release))}; this CarMaker supports {', '.join(supported)}",
