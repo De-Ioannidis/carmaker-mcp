@@ -1,5 +1,6 @@
 """Results storage, session log, bounded waiting, stop and locking (mock backend)."""
 
+import os
 import threading
 import time
 
@@ -152,6 +153,8 @@ def test_log_helpers(tmp_path):
     # a newer log file (the application was restarted) is read from its beginning
     newer = f.with_name("host_20260101_130000.log")
     newer.write_bytes(("C" + TAB + "3" + CRLF).encode())
+    later = f.stat().st_mtime + 10  # file times are too coarse on some machines to tell the two apart
+    os.utime(newer, (later, later))
     assert sessionlog.since(tmp_path, m) == ["C" + TAB + "3"]
     assert sessionlog.sim_end(["SIM_END" + TAB + TAB + "My Runs/A B" + TAB + "1.5s" + TAB + "2m"]) == {
         "testrun": "My Runs/A B", "sim_time_s": 1.5, "distance_m": 2.0}
