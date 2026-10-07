@@ -6,6 +6,8 @@ parameters may still change between minor versions.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-07
+
 First version. Developed and tested with CarMaker 14.1.1 and MATLAB R2024b on Windows; what has been verified
 against real software is listed in `docs/verification.md`.
 
