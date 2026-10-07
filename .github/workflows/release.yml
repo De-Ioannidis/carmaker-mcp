@@ -92,7 +92,10 @@ jobs:
       - run: uv sync --locked
       - name: Build the one-click bundles
         run: |
-          uv run python packaging/build_mcpb.py --matlab R2024b
+          # one per MATLAB release whose engine package installs on a Python this server supports
+          for release in R2022b R2023a R2023b R2024a R2024b; do
+            uv run python packaging/build_mcpb.py --matlab "$release"
+          done
           uv run python packaging/build_mcpb.py --no-matlab
       - name: Draft the release (review and publish it by hand)
         env:

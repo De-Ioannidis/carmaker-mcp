@@ -14,6 +14,7 @@ Test-run parameters can be overridden *in memory* (``overrides``); no project fi
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import glob
 import inspect
 import os
@@ -28,6 +29,9 @@ from typing import Any
 
 from . import log as sessionlog
 from .backend import BackendError
+
+# One class since Python 3.11; three different ones on 3.10.
+_TIMEOUTS = (TimeoutError, asyncio.TimeoutError, concurrent.futures.TimeoutError)
 
 DEFAULT_QUANTITIES = ["Time", "Car.v", "Car.YawRate", "Car.ax", "Car.ay", "Car.Distance"]
 
@@ -143,7 +147,7 @@ class StandaloneManager:
         fut = asyncio.run_coroutine_threadsafe(coro_fn(), self._loop)  # type: ignore[arg-type]
         try:
             return fut.result(timeout)
-        except TimeoutError as e:
+        except _TIMEOUTS as e:
             fut.cancel()
             raise BackendError(f"CarMaker did not answer within {timeout:.0f}s") from e
         except BackendError:
@@ -363,7 +367,7 @@ class StandaloneManager:
         async def go():
             try:
                 await asyncio.wait_for(inst.finished.wait(), timeout_s)
-            except TimeoutError:
+            except _TIMEOUTS:
                 return {"instance": inst.id, "finished": False, "timeout_s": timeout_s}
             info = inst.var.get_simend_info() if inst.var is not None else None
             return {

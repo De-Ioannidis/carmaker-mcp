@@ -6,6 +6,19 @@ parameters may still change between minor versions.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-07
+
+### Fixed
+- The setup check (`doctor`, `cm_doctor`, `config`) chose the wrong engine package and Python version for
+  MATLAB releases other than R2024b: releases before R2023b have engine versions `9.x`, and each engine
+  package installs only up to a certain Python version. A release whose engine needs a Python older than
+  3.10 is now reported as such.
+
+### Added
+- One-click bundles for MATLAB R2022b, R2023a, R2023b and R2024a next to R2024b (untested).
+
+## [0.1.0] - 2026-10-07
+
 First version. Developed and tested with CarMaker 14.1.1 and MATLAB R2024b on Windows; what has been verified
 against real software is listed in `docs/verification.md`.
 
