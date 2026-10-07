@@ -36,7 +36,30 @@ def checks(rep):
 
 
 def test_release_name():
-    assert doctor.release_name("24.2") == "R2024b" and doctor.release_name("23.1") == "R2023a"
+    assert doctor.release_name("24.2") == "R2024b" and doctor.release_name("23.2") == "R2023b"
+    assert doctor.release_name("9.14") == "R2023a" and doctor.release_name("9.13") == "R2022b"
+    assert doctor.engine_line("R2023a") == "9.14" and doctor.engine_line("R2024a") == "24.1"
+    assert doctor.engine_python("R2024a") == "3.11" and doctor.engine_python("R2022a") is None
+    assert doctor.engine_python("R2030a") == "3.14"  # unknown release: no limit known
+
+
+def test_older_matlab_gets_the_python_its_engine_installs_on(cfg):
+    (cfg.cm_home / "Matlab" / "R2022a").mkdir(parents=True)
+    (cfg.cm_home / "Python" / "python3.10").mkdir(parents=True, exist_ok=True)
+    (cfg.cm_home / "Python" / "python3.11").mkdir(parents=True, exist_ok=True)
+    rep = doctor.diagnose(cfg, installs={"24.1": "C:/MATLAB/R2024a"}, sessions=["cm_mcp"], engine="24.1.4")
+    assert rep.matlab_release == "R2024a" and rep.engine_pin == "matlabengine==24.1.*"
+    assert rep.recommended_python == "3.11"
+    assert doctor.uvx_args(rep)[:4] == ["--python", "3.11", "--with", "matlabengine==24.1.*"]
+    wrong = checks(rep).get("Python for the MATLAB engine")
+    if doctor._py(rep.python) > (3, 11):  # the tests themselves run on a newer Python
+        assert wrong is not None and wrong.ok is False and "uvx --python 3.11" in wrong.fix
+    else:
+        assert wrong is None
+
+    rep = doctor.diagnose(cfg, installs={"9.12": "C:/MATLAB/R2022a"}, sessions=None, engine=None)
+    assert rep.matlab_release == "R2022a" and rep.engine_pin is None
+    assert "needs Python 3.9 or older" in checks(rep)["Python for the MATLAB engine"].detail
 
 
 def test_healthy_machine(cfg):

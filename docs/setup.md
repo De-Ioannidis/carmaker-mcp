@@ -97,11 +97,13 @@ and register `"command": "C:\\path\\to\\.venv\\Scripts\\carmaker-mcp.exe"` witho
 
 ## One-click bundle (Claude Desktop)
 
-Releases carry `.mcpb` bundles. Download the one for your MATLAB release (for example
-`carmaker-mcp-<version>-R2024b-py312.mcpb`), open it with Claude Desktop (Settings, Extensions) and fill in
-the project folder. The host creates the Python environment itself; MATLAB of that release must be
-installed, because the MATLAB engine package is built against it. The bundle without MATLAB
-(`...-standalone-...`) only offers standalone runs.
+Releases carry one `.mcpb` bundle per MATLAB release from R2022b to R2024b (for example
+`carmaker-mcp-<version>-R2024b-py312.mcpb`; the Python version in the name is the newest one that release's
+engine package installs on). Download the one for your MATLAB release, open it with Claude Desktop (Settings,
+Extensions) and fill in the project folder. The host creates the Python environment itself with `uv`, which
+must be installed; MATLAB of that release must be installed too, because the MATLAB engine package is built
+against it. The bundle without MATLAB (`...-standalone-...`) only offers standalone runs. Only the R2024b
+bundle has been installed and used; the others are built the same way but untested.
 
 ## Single-file executable
 

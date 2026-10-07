@@ -64,11 +64,25 @@ USER_CONFIG = {
 
 
 def engine_pin(release: str) -> str:
-    """'R2024b' -> 'matlabengine==24.2.*'."""
-    m = re.fullmatch(r"R20(\d\d)([ab])", release)
-    if not m:
-        raise SystemExit(f"not a MATLAB release name: {release!r} (expected e.g. R2024b)")
-    return f"matlabengine=={int(m[1])}.{1 if m[2] == 'a' else 2}.*"
+    """'R2024b' -> 'matlabengine==24.2.*', 'R2023a' -> 'matlabengine==9.14.*'."""
+    from carmaker_mcp import doctor
+
+    try:
+        return f"matlabengine=={doctor.engine_line(release)}.*"
+    except ValueError as e:
+        raise SystemExit(str(e)) from e
+
+
+def default_python(release: str | None) -> str:
+    """Newest Python the release's engine package installs on (3.12 without MATLAB)."""
+    from carmaker_mcp import doctor
+
+    if release is None:
+        return "3.12"
+    py = doctor.engine_python(release, ["3.10", "3.11", "3.12"])
+    if py is None:
+        raise SystemExit(f"the engine package of {release} needs a Python older than this server supports")
+    return py
 
 
 def project_dependencies() -> list[str]:
@@ -188,11 +202,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--matlab", default="R2024b", help="MATLAB release the bundle is for (default R2024b)")
     ap.add_argument("--no-matlab", action="store_true", help="no MATLAB engine: standalone and --mock only")
-    ap.add_argument("--python", default="3.12", help="Python version (your CarMaker must ship cmapi for it)")
+    ap.add_argument("--python", default=None,
+                    help="Python version (default: the newest one the engine package of the MATLAB release "
+                         "installs on; your CarMaker must ship cmapi for it)")
     ap.add_argument("--stage-only", action="store_true", help="do not pack")
     args = ap.parse_args()
 
-    staged = stage(args.python, None if args.no_matlab else args.matlab)
+    matlab = None if args.no_matlab else args.matlab
+    staged = stage(args.python or default_python(matlab), matlab)
     print(f"staged {staged}")
     if args.stage_only:
         return 0
