@@ -45,7 +45,12 @@ def test_server_json_matches_the_package():
 
 def test_engine_pin(mcpb):
     assert mcpb.engine_pin("R2024b") == "matlabengine==24.2.*"
-    assert mcpb.engine_pin("R2023a") == "matlabengine==23.1.*"
+    assert mcpb.engine_pin("R2023b") == "matlabengine==23.2.*"
+    assert mcpb.engine_pin("R2023a") == "matlabengine==9.14.*"  # before R2023b the numbers do not follow the year
+    assert [mcpb.default_python(r) for r in ("R2022b", "R2023a", "R2023b", "R2024a", "R2024b", None)] == [
+        "3.10", "3.10", "3.11", "3.11", "3.12", "3.12"]
+    with pytest.raises(SystemExit):
+        mcpb.default_python("R2022a")
     with pytest.raises(SystemExit):
         mcpb.engine_pin("2024b")
 

@@ -78,7 +78,8 @@ from other setups are welcome.
 
 * Windows 10 or 11
 * IPG CarMaker with its Python API (developed on 14.1.1)
-* For the MATLAB-connected session: CarMaker for Simulink and a MATLAB release your CarMaker supports
+* For the MATLAB-connected session: CarMaker for Simulink and MATLAB R2022b or newer, as far as your CarMaker
+  supports it (see the table in [step 1](#1-check-your-machine); only R2024b has been tested)
 * [uv](https://docs.astral.sh/uv/) (it fetches the server and its Python environment; pip also works, see
   [docs/setup.md](https://github.com/De-Ioannidis/carmaker-mcp/blob/main/docs/setup.md))
 * An MCP client: Claude Code, Claude Desktop, VS Code with GitHub Copilot, Codex, Antigravity, Cursor, ...
@@ -100,17 +101,34 @@ uvx --python 3.12 --with matlabengine==24.2.* carmaker-mcp
 
 The two extra arguments matter, which is why the tool works them out for you:
 
-* `--python 3.12` selects a Python version that your CarMaker ships its Python API for (CarMaker 14.1: up to
-  3.12). Without it `uvx` may pick a newer Python that CarMaker cannot work with.
-* `--with "matlabengine==24.2.*"` adds the MATLAB engine package for **your** MATLAB release (R2023b `23.2.*`,
-  R2024a `24.1.*`, R2024b `24.2.*`, R2025a `25.1.*`). Leave it out if you only use standalone runs.
+* `--python 3.12` selects a Python version that both your CarMaker and your MATLAB release work with. Without
+  it `uvx` may pick a newer Python that neither can use.
+* `--with "matlabengine==24.2.*"` adds the MATLAB engine package for **your** MATLAB release. Leave it out if
+  you only use standalone runs.
+
+Both depend on the MATLAB release, because MathWorks publishes one engine package per release and each
+installs only on some Python versions:
+
+| MATLAB | Python | `uvx` arguments | Bundle on the release page |
+|---|---|---|---|
+| R2024b | 3.12 | `--python 3.12 --with "matlabengine==24.2.*"` | `...-R2024b-py312.mcpb` |
+| R2024a | 3.11 | `--python 3.11 --with "matlabengine==24.1.*"` | `...-R2024a-py311.mcpb` |
+| R2023b | 3.11 | `--python 3.11 --with "matlabengine==23.2.*"` | `...-R2023b-py311.mcpb` |
+| R2023a | 3.10 | `--python 3.10 --with "matlabengine==9.14.*"` | `...-R2023a-py310.mcpb` |
+| R2022b | 3.10 | `--python 3.10 --with "matlabengine==9.13.*"` | `...-R2022b-py310.mcpb` |
+| none (standalone runs only) | 3.12 | `--python 3.12` | `...-standalone-py312.mcpb` |
+
+Only the R2024b row has been run against real software. The others follow from the engine packages'
+published requirements and are untested; reports are welcome. MATLAB R2022a and older cannot be used for the
+MATLAB-connected session, because their engine packages need a Python older than this server supports
+(standalone runs still work).
 
 To look at the tools without CarMaker installed: `uvx carmaker-mcp --mock`.
 
 ### 2. Register the server in your MCP client
 
 Every client needs the same three things: the command `uvx`, the arguments from step 1, and your settings as
-environment variables. The two settings you will normally set:
+environment variables. The settings you will normally set:
 
 * `CM_PROJECT`: your CarMaker project folder.
 * `CM_MATLAB_INIT`: if you normally start work by running a MATLAB script of your project (one that adds
@@ -146,9 +164,10 @@ it again (`claude mcp remove carmaker`). `claude mcp list` shows whether the ser
 <summary><b>Claude Desktop</b></summary>
 
 **One-click bundle.** Download the `.mcpb` file for your MATLAB release from the
-[latest release](https://github.com/De-Ioannidis/carmaker-mcp/releases/latest), double-click it and click
-**Install**. Fill in the project folder and the model in the dialog; **Settings > Extensions > Configure**
-changes them later.
+[latest release](https://github.com/De-Ioannidis/carmaker-mcp/releases/latest) (the table in step 1 names them) and drag
+it into **Settings > Extensions**. Fill in the project folder, the model and, if your project has one, its
+MATLAB setup script in the dialog; **Configure** changes them later. The bundle holds the server but not its
+Python environment: Claude Desktop builds that with `uv` on first use, so `uv` must be installed.
 
 **By hand.** **Settings > Developer > Edit Config** opens `claude_desktop_config.json`. Add the entry and
 restart Claude Desktop:

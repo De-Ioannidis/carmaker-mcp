@@ -13,6 +13,7 @@ example during a simulation) cannot hang the server.
 
 from __future__ import annotations
 
+import concurrent.futures
 import io
 import threading
 from pathlib import Path
@@ -102,7 +103,7 @@ class Cm4slBackend:
                 fut = getattr(eng, fn)(*args, nargout=nargout, background=True,
                                        stdout=io.StringIO(), stderr=io.StringIO())
                 return fut.result(timeout=timeout)
-            except TimeoutError as e:
+            except (TimeoutError, concurrent.futures.TimeoutError) as e:  # two classes on 3.10
                 try:
                     fut.cancel()
                 except Exception:
