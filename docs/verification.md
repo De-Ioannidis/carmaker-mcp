@@ -68,8 +68,8 @@ the install, so the stock executable is the default.
 | Single-file executable | partly | PyInstaller build, about 39 MB, handshake about 2 s; read-only tools against the real session | Starting a run and edits through it; a second machine |
 | One-click bundle (`.mcpb`) | verified | Manifest validated and packed by the official `mcpb` tool. Installed in Claude Desktop from the file: the extension folder was unpacked, Claude Desktop built its Python environment with uv, and the settings dialog stored the project folder, model, setup script and session name. The installed copy, started with the command and environment from its manifest as the host does, answered after 22 s with 46 tools; its setup check passed all eight points and it read the project's data After the extension was switched on, Claude Desktop's own log shows it starting the server, the handshake and the lists of tools, prompts and resources answered within 11 s A conversation in Claude Desktop then asked for the setup check: the log shows two tool calls through the extension (`cm_doctor`, `cm_status`), both answered in under a second | Starting a run and editing through the extension; a second machine |
 | Registry entry (`server.json`) | partly | Validates against the registry's JSON schema | Publishing (needs the PyPI release first) |
-| FastMCP versions | unit tests only | The unit tests pass on FastMCP 2.14, 3.4 and 4.0 | |
-| GitHub workflows (CI, release) | not yet | | Never run |
+| FastMCP versions | unit tests only | The unit tests pass on FastMCP 2.14, 3 (in CI) and 4.0 | |
+| GitHub workflows (CI, release) | CI verified | CI ran on GitHub: unit tests on Windows and Linux with Python 3.10 and 3.12, the type check, the tests against FastMCP 2.14 and 3, and the package build, all green. **Found by the first run:** on Python 3.10 a standalone wait that timed out was reported as an error (its time-out exceptions are separate classes there), and one test depended on the resolution of file times | The release workflow (runs on a tag) |
 | A second machine or user | not yet | | Planned with a teammate on the same versions |
 
 ## Run the live checks yourself
